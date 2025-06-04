@@ -1,3 +1,29 @@
-// Authorization middleware
-// authorizeNote(): Request param의 Note 존재 여부, 소유자 일치 여부 확인 후
-// Note DAO 를 Request 객체에 추가
+import { RequestHandler } from 'express'
+import { findNoteById, Note } from '../models/note'
+
+export const authorizeNote: RequestHandler = async (req, res, next) => {
+  const id = Number(req.params.id)
+  if (Number.isNaN(id)) {
+    res.sendStatus(400)
+    return
+  }
+  const note = await findNoteById(id)
+  if (!note) {
+    res.sendStatus(404)
+    return
+  }
+  if (!req.user || note.userId !== req.user.id) {
+    res.sendStatus(403)
+    return
+  }
+  req.note = note
+  next()
+}
+
+declare global {
+  namespace Express {
+    interface Request {
+      note?: Note
+    }
+  }
+}

@@ -1,33 +1,44 @@
-// Note routes
-// Base Path: /notes
-// GET    /         : 사용자가 작성한 노트 목록 조회 (id, title)
-// GET    /:id      : 노트 상세 조회 (id, title, content)
-// POST   /         : 주어진 title, content를 통한 노트 생성
-// PUT    /:id      : 주어진 title, content로 노트 업데이트
-// DELETE /:id      : 노트 삭제
-
 import { Router } from 'express'
+import { authenticateUser } from '../middlewares/authentication'
+import { authorizeNote } from '../middlewares/authorization'
+import { createNote, deleteNote, findNotesByUser, updateNote } from '../models/note'
 
 const router = Router()
 
-router.get('/', (req, res) => {
-  res.send('노트 목록 조회 성공')
+router.use(authenticateUser)
+
+router.get('/', async (req, res) => {
+  const notes = await findNotesByUser(req.user!.id)
+  res.json(notes)
 })
 
-router.get('/:id', (req, res) => {
-  res.send('노트 상세 조회 성공')
+router.get('/:id', authorizeNote, (req, res) => {
+  res.json(req.note)
 })
 
-router.post('/', (req, res) => {
-  res.send('노트 생성 성공')
+router.post('/', async (req, res) => {
+  const { title, content } = req.body
+  if (!title || !content) {
+    res.sendStatus(400)
+    return
+  }
+  const note = await createNote(req.user!.id, title, content)
+  res.status(201).json(note)
 })
 
-router.put('/:id', (req, res) => {
-  res.send('노트 업데이트 성공')
+router.put('/:id', authorizeNote, async (req, res) => {
+  const { title, content } = req.body
+  if (!title || !content) {
+    res.sendStatus(400)
+    return
+  }
+  const note = await updateNote(Number(req.params.id), title, content)
+  res.json(note)
 })
 
-router.delete('/:id', (req, res) => {
-  res.send('노트 삭제 성공')
+router.delete('/:id', authorizeNote, async (req, res) => {
+  await deleteNote(Number(req.params.id))
+  res.sendStatus(204)
 })
 
 export { router as notesRouter }
