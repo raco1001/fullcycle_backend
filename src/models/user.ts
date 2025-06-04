@@ -1,5 +1,5 @@
 import crypto from 'crypto'
-import { RowDataPacket, ResultSetHeader } from 'mysql2/promise'
+import { ResultSetHeader, RowDataPacket } from 'mysql2/promise'
 import { pool } from '../utils/mysql'
 
 export interface User {
@@ -10,24 +10,33 @@ export interface User {
 
 function hashPassword(password: string): string {
   const salt = crypto.randomBytes(16).toString('hex')
-  const hash = crypto.createHash('sha256').update(password + salt).digest('hex')
+  const hash = crypto
+    .createHash('sha256')
+    .update(password + salt)
+    .digest('hex')
   return `${salt}:${hash}`
 }
 
 function comparePassword(password: string, hashed: string): boolean {
   const [salt, originalHash] = hashed.split(':')
-  const hash = crypto.createHash('sha256').update(password + salt).digest('hex')
+  const hash = crypto
+    .createHash('sha256')
+    .update(password + salt)
+    .digest('hex')
   return hash === originalHash
 }
 
-export async function createUser(email: string, password: string): Promise<User> {
-  const hashed = hashPassword(password)
+export async function createUser(
+  email: string,
+  password: string,
+): Promise<User> {
+  const encrypted_password = hashPassword(password)
   const [result] = await pool.query<ResultSetHeader>(
-    'INSERT INTO users (email, password) VALUES (?, ?)',
-    [email, hashed],
+    'INSERT INTO users (email, encrypted_password) VALUES (?, ?)',
+    [email, encrypted_password],
   )
   const id = (result as ResultSetHeader).insertId
-  return { id, email, password: hashed }
+  return { id, email, password: encrypted_password }
 }
 
 async function queryUser(sql: string, param: any): Promise<User | null> {
@@ -38,13 +47,22 @@ async function queryUser(sql: string, param: any): Promise<User | null> {
 }
 
 export function findUserByEmail(email: string): Promise<User | null> {
-  return queryUser('SELECT id, email, password FROM users WHERE email = ? LIMIT 1', [email])
+  return queryUser(
+    'SELECT id, email, encrypted_password AS password FROM users WHERE email = ? LIMIT 1',
+    [email],
+  )
 }
 
 export function findUserById(id: number): Promise<User | null> {
-  return queryUser('SELECT id, email, password FROM users WHERE id = ? LIMIT 1', [id])
+  return queryUser(
+    'SELECT id, email, encrypted_password AS password FROM users WHERE id = ? LIMIT 1',
+    [id],
+  )
 }
 
-export function verifyPassword(password: string, hashed: string): Promise<boolean> {
+export function verifyPassword(
+  password: string,
+  hashed: string,
+): Promise<boolean> {
   return Promise.resolve(comparePassword(password, hashed))
 }

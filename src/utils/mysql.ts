@@ -8,6 +8,15 @@
 import mysql from 'mysql2/promise'
 import { DB_HOST, DB_NAME, DB_PASSWORD, DB_PORT, DB_USER } from '../settings'
 
+// Added for debugging
+console.log('[mysql.ts] Attempting to create pool with:', {
+  host: DB_HOST,
+  port: DB_PORT,
+  user: DB_USER,
+  password_length: DB_PASSWORD?.length, // Log password length for security
+  database: DB_NAME,
+})
+
 export const pool = mysql.createPool({
   host: DB_HOST,
   port: DB_PORT,

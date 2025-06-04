@@ -1,7 +1,12 @@
 import { Router } from 'express'
 import { authenticateUser } from '../middlewares/authentication'
 import { authorizeNote } from '../middlewares/authorization'
-import { createNote, deleteNote, findNotesByUser, updateNote } from '../models/note'
+import {
+  createNote,
+  deleteNote,
+  findNotesByUser,
+  updateNote,
+} from '../models/note'
 
 const router = Router()
 
@@ -16,12 +21,14 @@ router.get('/:id', authorizeNote, (req, res) => {
   res.json(req.note)
 })
 
-router.post('/', async (req, res) => {
+router.post('/', authenticateUser, async (req, res) => {
   const { title, content } = req.body
+  console.log('createNote', req.user!.id, title, content)
   if (!title || !content) {
     res.sendStatus(400)
     return
   }
+  console.log('createNote', req.user!.id, title, content)
   const note = await createNote(req.user!.id, title, content)
   res.status(201).json(note)
 })

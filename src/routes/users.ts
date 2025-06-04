@@ -1,11 +1,10 @@
 import { Router } from 'express'
-import { createUser, findUserByEmail, verifyPassword } from '../models/user'
 import { authenticateUser } from '../middlewares/authentication'
-import { sign } from '../utils/jwt'
+import { createUser, findUserByEmail, findUserById } from '../models/user'
 
 const router = Router()
 
-router.post('/users', async (req, res) => {
+router.post('/', async (req, res) => {
   const { email, password } = req.body
   if (!email || !password) {
     res.sendStatus(400)
@@ -20,34 +19,40 @@ router.post('/users', async (req, res) => {
   res.status(201).json({ id: user.id, email: user.email })
 })
 
-router.post('/login', async (req, res) => {
+router.get('/me', authenticateUser, (req, res) => {
+  res.json({ id: req.user!.id, email: req.user!.email })
+})
+
+router.post('/join', async (req, res) => {
   const { email, password } = req.body
+  console.log('join', email, password)
   if (!email || !password) {
     res.sendStatus(400)
     return
   }
-  const user = await findUserByEmail(email)
-  if (!user) {
-    res.sendStatus(401)
+  const existing = await findUserByEmail(email)
+  if (existing) {
+    res.status(409).send('Email already exists')
     return
   }
-  const valid = await verifyPassword(password, user.password)
-  if (!valid) {
-    res.sendStatus(401)
+  const user = await createUser(email, password)
+  res.status(201).json({ id: user.id, email: user.email })
+})
+
+router.get('/:id', authenticateUser, async (req, res) => {
+  const userId = parseInt(req.params.id, 10)
+  if (isNaN(userId)) {
+    res.status(400).send('Invalid user ID')
     return
   }
-  const token = sign({ userId: user.id }, 3600)
-  res.cookie('token', token, { httpOnly: true })
-  res.json({ id: user.id, email: user.email })
-})
 
-router.post('/logout', (_req, res) => {
-  res.clearCookie('token')
-  res.sendStatus(204)
-})
+  const user = await findUserById(userId)
 
-router.get('/users/me', authenticateUser, (req, res) => {
-  res.json({ id: req.user!.id, email: req.user!.email })
+  if (user) {
+    res.json({ id: user.id, email: user.email })
+  } else {
+    res.status(404).send('User not found')
+  }
 })
 
 export { router as usersRouter }

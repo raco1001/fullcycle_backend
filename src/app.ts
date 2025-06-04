@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import express, { NextFunction, Request, Response } from 'express'
 import 'express-async-error'
+import { authRouter } from './routes/auth'
 import { healthcheckRouter } from './routes/healthcheck'
 import { notesRouter } from './routes/notes'
 import { usersRouter } from './routes/users'
@@ -29,7 +30,8 @@ app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {
 })
 
 app.use('/healthcheck', healthcheckRouter)
-app.use('/', usersRouter)
+app.use('/users', usersRouter)
 app.use('/notes', notesRouter)
+app.use('/auth', authRouter)
 
 export { app }
