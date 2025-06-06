@@ -17,12 +17,10 @@ router.get('/:id', authorization_1.authorizeNote, (req, res) => {
 });
 router.post('/', authentication_1.authenticateUser, async (req, res) => {
     const { title, content } = req.body;
-    console.log('createNote', req.user.id, title, content);
     if (!title || !content) {
         res.sendStatus(400);
         return;
     }
-    console.log('createNote', req.user.id, title, content);
     const note = await (0, note_1.createNote)(req.user.id, title, content);
     res.status(201).json(note);
 });
