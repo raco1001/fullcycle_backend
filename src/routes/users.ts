@@ -25,7 +25,6 @@ router.get('/me', authenticateUser, (req, res) => {
 
 router.post('/join', async (req, res) => {
   const { email, password } = req.body
-  console.log('join', email, password)
   if (!email || !password) {
     res.sendStatus(400)
     return

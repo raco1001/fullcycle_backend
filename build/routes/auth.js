@@ -8,7 +8,6 @@ const router = (0, express_1.Router)();
 exports.authRouter = router;
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
-    console.log('login', email, password);
     if (!email || !password) {
         res.sendStatus(400);
         return;
@@ -24,10 +23,8 @@ router.post('/login', async (req, res) => {
         return;
     }
     const token = (0, jwt_1.sign)({ userId: user.id }, 3600);
-    console.log('token', token);
     res.cookie('token', token, { httpOnly: true });
     res.json({ id: user.id, email: user.email });
-    console.log('respose status', res.statusCode);
 });
 router.post('/logout', (_req, res) => {
     res.clearCookie('token');
